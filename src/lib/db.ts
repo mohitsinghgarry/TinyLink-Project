@@ -1,17 +1,17 @@
 import { sql } from '@vercel/postgres';
 
 export interface Link {
-    id: number;
-    code: string;
-    target_url: string;
-    clicks: number;
-    created_at: Date;
-    last_clicked_at: Date | null;
+  id: number;
+  code: string;
+  target_url: string;
+  clicks: number;
+  created_at: Date;
+  last_clicked_at: Date | null;
 }
 
 export async function initDatabase() {
-    try {
-        await sql`
+  try {
+    await sql`
       CREATE TABLE IF NOT EXISTS links (
         id SERIAL PRIMARY KEY,
         code VARCHAR(8) UNIQUE NOT NULL,
@@ -21,45 +21,62 @@ export async function initDatabase() {
         last_clicked_at TIMESTAMP
       )
     `;
-    } catch (error) {
-        console.error('Database initialization error:', error);
-    }
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    throw error;
+  }
 }
 
 export async function createLink(code: string, targetUrl: string): Promise<Link> {
-    const result = await sql`
+  const result = await sql`
     INSERT INTO links (code, target_url)
     VALUES (${code}, ${targetUrl})
     RETURNING *
   `;
-    return result.rows[0] as Link;
+  return result.rows[0] as Link;
 }
 
 export async function getLink(code: string): Promise<Link | null> {
-    const result = await sql`
+  const result = await sql`
     SELECT * FROM links WHERE code = ${code}
   `;
-    return result.rows[0] as Link || null;
+  return result.rows[0] as Link || null;
 }
 
 export async function getAllLinks(): Promise<Link[]> {
-    const result = await sql`
+  const result = await sql`
     SELECT * FROM links ORDER BY created_at DESC
   `;
-    return result.rows as Link[];
+  return result.rows as Link[];
 }
 
-export async function incrementClicks(code: string): Promise<void> {
-    await sql`
-    UPDATE links 
-    SET clicks = clicks + 1, last_clicked_at = CURRENT_TIMESTAMP
-    WHERE code = ${code}
-  `;
+export async function incrementClicks(code: string): Promise<{ clicks: number; last_clicked_at: Date | null }> {
+  try {
+    // Perform an atomic increment and return the updated fields
+    const result = await sql`
+      UPDATE links
+      SET clicks = clicks + 1,
+          last_clicked_at = CURRENT_TIMESTAMP
+      WHERE code = ${code}
+      RETURNING clicks, last_clicked_at
+    `;
+
+    if (!result.rows || result.rows.length === 0) {
+      throw new Error(`Link not found or failed to update: ${code}`);
+    }
+
+    const updated = result.rows[0];
+    return { clicks: updated.clicks, last_clicked_at: updated.last_clicked_at };
+  } catch (error) {
+    console.error('Error incrementing clicks:', error);
+    throw error;
+  }
 }
 
 export async function deleteLink(code: string): Promise<boolean> {
-    const result = await sql`
+  const result = await sql`
     DELETE FROM links WHERE code = ${code}
   `;
-    return result.rowCount > 0;
+  return result.rowCount > 0;
 }

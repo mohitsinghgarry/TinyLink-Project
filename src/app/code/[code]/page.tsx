@@ -15,7 +15,9 @@ export default function StatsPage() {
     useEffect(() => {
         const fetchLink = async () => {
             try {
-                const response = await fetch(`/api/links/${code}`);
+                const response = await fetch(`/api/links/${code}?t=${Date.now()}`, {
+                    cache: 'no-store'
+                });
                 const data = await response.json();
 
                 if (data.success) {

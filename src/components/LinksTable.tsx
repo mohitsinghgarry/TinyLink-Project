@@ -7,9 +7,10 @@ import { truncateUrl, formatDate } from '@/lib/utils';
 interface LinksTableProps {
     links: Link[];
     onDelete: (code: string) => void;
+    onRefresh?: () => void;
 }
 
-export default function LinksTable({ links, onDelete }: LinksTableProps) {
+export default function LinksTable({ links, onDelete, onRefresh }: LinksTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortField, setSortField] = useState<keyof Link>('created_at');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -67,13 +68,24 @@ export default function LinksTable({ links, onDelete }: LinksTableProps) {
         <div className="card">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Your Links</h2>
-                <input
-                    type="text"
-                    placeholder="Search links..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input max-w-xs"
-                />
+                <div className="flex items-center space-x-3">
+                    <input
+                        type="text"
+                        placeholder="Search links..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="input max-w-xs"
+                    />
+                    {onRefresh && (
+                        <button
+                            onClick={onRefresh}
+                            className="btn btn-secondary text-sm"
+                            title="Refresh to see updated click counts"
+                        >
+                            🔄 Refresh
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="overflow-x-auto">

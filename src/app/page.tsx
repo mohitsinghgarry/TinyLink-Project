@@ -12,7 +12,10 @@ export default function Dashboard() {
 
     const fetchLinks = async () => {
         try {
-            const response = await fetch('/api/links');
+            // Add cache-busting parameter to ensure fresh data
+            const response = await fetch(`/api/links?t=${Date.now()}`, {
+                cache: 'no-store'
+            });
             const data = await response.json();
 
             if (data.success) {
@@ -47,6 +50,10 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchLinks();
+
+        // Auto-refresh every 30 seconds to show updated click counts
+        const interval = setInterval(fetchLinks, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) {
@@ -71,7 +78,7 @@ export default function Dashboard() {
             )}
 
             <LinkForm onSuccess={fetchLinks} />
-            <LinksTable links={links} onDelete={handleDelete} />
+            <LinksTable links={links} onDelete={handleDelete} onRefresh={fetchLinks} />
         </div>
     );
 }

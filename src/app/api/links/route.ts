@@ -33,12 +33,21 @@ export async function POST(request: NextRequest) {
             const link = await createLink(code, url);
             return NextResponse.json({ success: true, data: link });
         } catch (error: any) {
-            if (error.message?.includes('duplicate key')) {
+            // Postgres unique violation is usually code '23505'. Fall back to message checks.
+            const pgCode = error?.code;
+            const msg = error?.message || '';
+
+            if (
+                pgCode === '23505' ||
+                msg.includes('duplicate key') ||
+                msg.toLowerCase().includes('unique')
+            ) {
                 return NextResponse.json(
                     { success: false, error: 'Code already exists' },
                     { status: 409 }
                 );
             }
+
             throw error;
         }
     } catch (error) {

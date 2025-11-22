@@ -24,7 +24,19 @@ export function truncateUrl(url: string, maxLength: number = 50): string {
     return url.length > maxLength ? url.substring(0, maxLength) + '...' : url;
 }
 
-export function formatDate(date: Date | null): string {
+export function formatDate(date: Date | string | null): string {
     if (!date) return 'Never';
-    return new Date(date).toLocaleString();
+
+    const d = new Date(date);
+
+    // Use the user's locale/timezone by default so displayed times reflect their environment.
+    return d.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
 }
